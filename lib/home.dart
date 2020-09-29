@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:movies_app/apikey.dart';
 import 'package:http/http.dart' as http;
+import 'package:movies_app/genre.dart';
 import 'package:movies_app/model.dart';
 
 class HomePage extends StatefulWidget {
@@ -12,7 +13,15 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
+  TabController tabController;
+  @override
+  void initState() {
+    super.initState();
+    tabController = TabController(length: 5, vsync: this);
+  }
+
   getTrendingMovies() async {
     var url = "https://api.themoviedb.org/3/trending/movie/day?api_key=$apiKey";
     var response = await http.get(url);
@@ -24,7 +33,7 @@ class _HomePageState extends State<HomePage> {
           cinema['poster_path'],
           cinema['title'],
           cinema['overview'],
-          cinema['vote_average'],
+          1.0,
           cinema['id'],
           cinema['original_language'],
           cinema['original_title']);
@@ -32,6 +41,14 @@ class _HomePageState extends State<HomePage> {
     }
     print(trendingList);
     return trendingList;
+  }
+
+  getGenreList() async {
+    var url =
+        'https://api.themoviedb.org/3/genre/movie/list?api_key=$apiKey&language=en-US';
+    var response = await http.get(url);
+    var result = jsonDecode(response.body);
+    print(result['results']);
   }
 
   @override
@@ -60,13 +77,16 @@ class _HomePageState extends State<HomePage> {
                   return CarouselSlider.builder(
                       itemCount: dataSnapshot.data.length,
                       itemBuilder: (BuildContext context, int index) {
-                        return Container(
-                          height: 400,
-                          width: MediaQuery.of(context).size.width,
-                          child: Image(
-                            image: NetworkImage(
-                                'https://image.tmdb.org/t/p/w500/${dataSnapshot.data[index].poster}'),
-                            fit: BoxFit.contain,
+                        return GestureDetector(
+                          onTap: () => getGenreList(),
+                          child: Container(
+                            height: 400,
+                            width: MediaQuery.of(context).size.width,
+                            child: Image(
+                              image: NetworkImage(
+                                  'https://image.tmdb.org/t/p/w500/${dataSnapshot.data[index].poster}'),
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         );
                       },
@@ -83,6 +103,33 @@ class _HomePageState extends State<HomePage> {
                         scrollDirection: Axis.horizontal,
                       ));
                 }),
+          ),
+          TabBar(
+            controller: tabController,
+            isScrollable: true,
+            indicatorColor: Colors.black,
+            unselectedLabelColor: Colors.grey,
+            labelColor: Colors.black,
+            labelStyle: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
+            tabs: [
+              Tab(text: "Action"),
+              Tab(text: "Comedy"),
+              Tab(text: "Crime"),
+              Tab(text: "Thriller"),
+              Tab(text: "Romance"),
+            ],
+          ),
+          SingleChildScrollView(
+            child: Container(
+              height: 200.0,
+              child: TabBarView(controller: tabController, children: [
+                GenrePage('28'),
+                GenrePage('35'),
+                GenrePage('80'),
+                GenrePage('53'),
+                GenrePage('10749')
+              ]),
+            ),
           )
         ]),
       ),
