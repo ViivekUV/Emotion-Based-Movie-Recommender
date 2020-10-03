@@ -10,6 +10,9 @@ import 'package:movies_app/model.dart';
 import 'package:movies_app/viewmovie.dart';
 
 class HomePage extends StatefulWidget {
+  final String mood;
+  final String id;
+  HomePage(this.mood, this.id);
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -23,12 +26,15 @@ class _HomePageState extends State<HomePage>
     tabController = TabController(length: 5, vsync: this);
   }
 
-  getTrendingMovies() async {
-    var url = "https://api.themoviedb.org/3/trending/movie/day?api_key=$apiKey";
+  getMoodMovies() async {
+    print(widget.id);
+    var url =
+        'https://api.themoviedb.org/3/discover/movie?api_key=$apiKey&language=en-US&sort_by=popularity.desc&page=1&with_genres=${widget.id}';
     var response = await http.get(url);
     var result = jsonDecode(response.body);
-    // print(result['results']);
-    List<Movie> trendingList = List<Movie>();
+    print(result);
+
+    List<Movie> moodList = List<Movie>();
     for (var cinema in result['results']) {
       cinema['vote_average'] > 0.0
           ? cinema['vote_average'] = cinema['vote_average'] / 2
@@ -41,10 +47,9 @@ class _HomePageState extends State<HomePage>
           cinema['id'],
           cinema['original_language'],
           cinema['original_title']);
-      trendingList.add(movie);
+      moodList.add(movie);
     }
-    // print(trendingList);
-    return trendingList;
+    return moodList;
   }
 
   getGenreList() async {
@@ -53,6 +58,22 @@ class _HomePageState extends State<HomePage>
     var response = await http.get(url);
     var result = jsonDecode(response.body);
     // print(result['results']);
+    List<Movie> genreList = List<Movie>();
+    for (var cinema in result['results']) {
+      cinema['vote_average'] > 0.0
+          ? cinema['vote_average'] = cinema['vote_average'] / 2
+          : cinema['vote_average'] = 0.0;
+      Movie movie = Movie(
+          cinema['poster_path'],
+          cinema['title'],
+          cinema['overview'],
+          cinema['vote_average'],
+          cinema['id'],
+          cinema['original_language'],
+          cinema['original_title']);
+      genreList.add(movie);
+    }
+    return genreList;
   }
 
   @override
@@ -64,16 +85,16 @@ class _HomePageState extends State<HomePage>
             alignment: Alignment.centerLeft,
             margin: EdgeInsets.only(left: 20.0, top: 30.0),
             child: Text(
-              'Trending now',
+              "Here's our recommendation for ${widget.mood} mood",
               style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.w700, fontSize: 20.0),
+                  fontWeight: FontWeight.w500, fontSize: 20.0),
             ),
           ),
           SizedBox(height: 10.0),
           Container(
             height: 400,
             child: FutureBuilder(
-                future: getTrendingMovies(),
+                future: getMoodMovies(),
                 builder: (BuildContext context, dataSnapshot) {
                   if (!dataSnapshot.hasData) {
                     return Text("Loading");
@@ -119,6 +140,7 @@ class _HomePageState extends State<HomePage>
                         enlargeCenterPage: true,
                         scrollDirection: Axis.horizontal,
                       ));
+                  // return GenrePage(widget.id);
                 }),
           ),
           TabBar(
